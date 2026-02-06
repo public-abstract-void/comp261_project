@@ -1,3 +1,0 @@
-we are in hell
-helloworld(print);
-// i know snek hehe
