@@ -1,0 +1,15 @@
+ticker,file_name,file_path
+AAPL,aapl.us.txt,/Users/allanodora/Downloads/archive/Stocks/aapl.us.txt
+AMZN,amzn.us.txt,/Users/allanodora/Downloads/archive/Stocks/amzn.us.txt
+DIS,dis.us.txt,/Users/allanodora/Downloads/archive/Stocks/dis.us.txt
+GOOGL,googl.us.txt,/Users/allanodora/Downloads/archive/Stocks/googl.us.txt
+HD,hd.us.txt,/Users/allanodora/Downloads/archive/Stocks/hd.us.txt
+JPM,jpm.us.txt,/Users/allanodora/Downloads/archive/Stocks/jpm.us.txt
+MA,ma.us.txt,/Users/allanodora/Downloads/archive/Stocks/ma.us.txt
+MSFT,msft.us.txt,/Users/allanodora/Downloads/archive/Stocks/msft.us.txt
+NVDA,nvda.us.txt,/Users/allanodora/Downloads/archive/Stocks/nvda.us.txt
+PG,pg.us.txt,/Users/allanodora/Downloads/archive/Stocks/pg.us.txt
+TSLA,tsla.us.txt,/Users/allanodora/Downloads/archive/Stocks/tsla.us.txt
+UNH,unh.us.txt,/Users/allanodora/Downloads/archive/Stocks/unh.us.txt
+V,v.us.txt,/Users/allanodora/Downloads/archive/Stocks/v.us.txt
+XOM,xom.us.txt,/Users/allanodora/Downloads/archive/Stocks/xom.us.txt
