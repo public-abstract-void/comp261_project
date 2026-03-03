@@ -108,7 +108,8 @@ def main() -> None:
                 {
                     "ticker": ticker,
                     "file_name": file_path.name,
-                    "file_path": str(file_path.resolve()),
+                    # Store portable relative paths instead of machine-specific absolute paths.
+                    "file_path": str(Path("Stocks") / file_path.name),
                 }
             )
 
