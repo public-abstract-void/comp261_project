@@ -19,7 +19,9 @@ from day_trading_bot.data.loader import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Load one stock file, inspect schema, parse dates, and check missing values."
+        description=(
+            "Guardrail precheck: load one stock file and validate basic data quality before full runs."
+        )
     )
     parser.add_argument("--ticker", default="AAPL", help="Stock ticker symbol (default: AAPL)")
     parser.add_argument(
@@ -61,7 +63,30 @@ def main() -> None:
         print(f"Max date: {df['Date'].max()}")
 
     print("\n--- Missing Values (per column) ---")
-    print(missing_value_report(df))
+    missing = missing_value_report(df)
+    print(missing)
+
+    print("\n--- Guardrail Checks ---")
+    expected_columns = {"Date", "Open", "High", "Low", "Close", "Volume", "OpenInt"}
+    missing_columns = expected_columns - set(df.columns)
+    negative_volume = int((df["Volume"] < 0).sum()) if "Volume" in df.columns else -1
+    total_missing = int(missing.sum())
+
+    checks_ok = True
+    if missing_columns:
+        checks_ok = False
+        print(f"FAIL: missing expected columns: {sorted(missing_columns)}")
+    if invalid_dates > 0:
+        checks_ok = False
+        print(f"FAIL: invalid dates found: {invalid_dates}")
+    if total_missing > 0:
+        checks_ok = False
+        print(f"FAIL: missing values found: {total_missing}")
+    if negative_volume > 0:
+        checks_ok = False
+        print(f"FAIL: negative volume rows found: {negative_volume}")
+    if checks_ok:
+        print("PASS: precheck looks good for this ticker.")
 
     print("\n--- Head (first 5 rows) ---")
     print(df.head())
