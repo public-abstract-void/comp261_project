@@ -45,3 +45,19 @@ This is a data-prep script (not a UI feature). It filters raw stock files down t
 
 ### Optional: copy filtered files into a folder
 - `python scripts/filter_sp500_files.py --stocks-dir "/Users/allanodora/Downloads/archive/Stocks" --symbols-file "data/reference/sp500_symbols_template.csv" --copy-dir "data/processed/sp500_files"`
+
+## Professional Pipeline (Merge → Clean → Validate)
+Run the full professional pipeline (local only):
+- `python scripts/run_pipeline.py`
+
+Optional parquet + metadata:
+- `python scripts/run_pipeline.py --write-parquet`
+
+Key outputs:
+- `data/processed/full_stocks_merged.csv`
+- `data/processed/full_stocks_cleaned.csv`
+- `data/processed/full_stocks_cleaned.parquet` (optional)
+- `data/processed/run_metadata.json`
+
+Data contract validation:
+- `src/day_trading_bot/data/contract.py`

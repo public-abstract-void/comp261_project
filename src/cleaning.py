@@ -115,6 +115,19 @@ def clean_data(input_file, output_file, drop_zero_volume=False):
     print(f"New shape: {df.shape}")
 
     # --------------------------------------------------
+    # STAGE 5B — Fix High/Low Inconsistencies
+    # --------------------------------------------------
+    if "High" in df.columns and "Low" in df.columns:
+        print_stage("STAGE 5B: DROPPING HIGH < LOW ROWS")
+
+        before_rows = len(df)
+        df = df[df["High"] >= df["Low"]]
+        after_rows = len(df)
+
+        print(f"Rows removed (High < Low): {before_rows - after_rows}")
+        print(f"New shape: {df.shape}")
+
+    # --------------------------------------------------
     # STAGE 6 — Optional: Remove Zero Volume
     # --------------------------------------------------
     if drop_zero_volume and "Volume" in df.columns:

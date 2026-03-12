@@ -4,3 +4,5 @@ __pycache__/
 .DS_Store
 archive/
 data/raw/
+data/processed/
+full_cleaning_log.txt
