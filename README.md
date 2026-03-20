@@ -61,3 +61,15 @@ Key outputs:
 
 Data contract validation:
 - `src/day_trading_bot/data/contract.py`
+
+## Training Table Contract
+Locked output columns (exact order):
+- `Date,Open,High,Low,Close,Volume,OpenInt,symbol,type,target_up_1d,target_up_5d,target_up_10d`
+
+Targets are computed per `symbol` using future Close:
+- `target_up_1d = Close(t+1) > Close(t)`
+- `target_up_5d = Close(t+5) > Close(t)`
+- `target_up_10d = Close(t+10) > Close(t)`
+
+Training table builder:
+- `python scripts/build_training_table.py`

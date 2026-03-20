@@ -2,9 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, List
+
 import pandas as pd
 
-REQUIRED_COLUMNS = ["Date", "Open", "High", "Low", "Close", "Volume", "OpenInt", "symbol"]
+BASE_REQUIRED_COLUMNS = ["Date", "Open", "High", "Low", "Close", "Volume", "OpenInt", "symbol"]
+
+# What PurplePike asked for as the training-ready table contract.
+TRAINING_REQUIRED_COLUMNS = BASE_REQUIRED_COLUMNS + [
+    "type",
+    "target_up_1d",
+    "target_up_5d",
+    "target_up_10d",
+]
 
 
 @dataclass
@@ -38,7 +47,7 @@ class ValidationResult:
         }
 
 
-def validate_csv(path: str, chunksize: int = 1_000_000) -> ValidationResult:
+def validate_csv(path: str, chunksize: int = 1_000_000, required_columns: List[str] | None = None) -> ValidationResult:
     total_rows = 0
     invalid_date_rows = 0
     missing_value_rows = 0
@@ -47,7 +56,8 @@ def validate_csv(path: str, chunksize: int = 1_000_000) -> ValidationResult:
 
     # Read header once for column check
     header_df = pd.read_csv(path, nrows=1)
-    missing_columns = [c for c in REQUIRED_COLUMNS if c not in header_df.columns]
+    required = BASE_REQUIRED_COLUMNS if required_columns is None else required_columns
+    missing_columns = [c for c in required if c not in header_df.columns]
 
     if missing_columns:
         return ValidationResult(
@@ -83,3 +93,7 @@ def validate_csv(path: str, chunksize: int = 1_000_000) -> ValidationResult:
         negative_volume_rows=negative_volume_rows,
         high_lt_low_rows=high_lt_low_rows,
     )
+
+
+def validate_training_csv(path: str, chunksize: int = 1_000_000) -> ValidationResult:
+    return validate_csv(path, chunksize=chunksize, required_columns=TRAINING_REQUIRED_COLUMNS)
