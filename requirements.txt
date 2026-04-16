@@ -1,3 +1,11 @@
 pandas>=2.0
 tqdm>=4.0
 pyarrow>=15.0
+fastapi>=0.100
+uvicorn>=0.20
+httpx>=0.24
+feedparser>=6.0
+certifi>=2024.0
+yfinance>=0.2.0
+alpha-vantage>=2.0
+requests>=2.0
