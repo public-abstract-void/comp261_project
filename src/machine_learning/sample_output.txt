@@ -1,0 +1,131 @@
+=== DATA PROCESSING ===
+Loading data...
+Optimizing dtypes...
+Initial rows: 16,814,949
+
+Filtering symbols...
+Remaining rows: 16,808,848
+
+Applying target smoothing...
+Applying cross-sectional normalization...
+
+Normalizing features:
+100% | 37/37 [00:14<00:00, 2.55it/s]
+
+Applying time-decay weighting...
+
+Train rows: 13,452,273
+Test rows: 3,356,575
+
+
+=== MODEL TRAINING ===
+Training model...
+
+[LightGBM] Total Bins: 9359
+[LightGBM] Train data points: 13,452,273
+[LightGBM] Used features: 37
+[LightGBM] Start training from score: -0.009039
+
+Training until validation scores don't improve for 200 rounds:
+
+[50]   RMSE: 0.869166   L2: 0.755450
+[100]  RMSE: 0.832642   L2: 0.693292
+[150]  RMSE: 0.816761   L2: 0.667099
+[200]  RMSE: 0.809951   L2: 0.656021
+[250]  RMSE: 0.807168   L2: 0.651520
+[300]  RMSE: 0.805804   L2: 0.649320
+[350]  RMSE: 0.805644   L2: 0.649063
+[400]  RMSE: 0.806094   L2: 0.649788
+[450]  RMSE: 0.807194   L2: 0.651563
+[500]  RMSE: 0.807850   L2: 0.652622
+[550]  RMSE: 0.809202   L2: 0.654807
+
+Early stopping triggered.
+
+Best iteration: 352
+Best RMSE: 0.805616
+Best L2: 0.649017
+
+
+=== PREDICTION & PERFORMANCE ===
+Generating predictions...
+
+Mean IC:       -0.022368
+Mean Rank IC:  -0.023456
+
+
+=== TOP STOCKS (LATEST DATE) ===
+Symbol   Prediction   Weight
+--------------------------------
+ISIG     6.812257     0.013281
+EVEP     6.742219     0.013144
+DCIX     6.706825     0.013075
+TOPS     6.564904     0.012799
+IO       6.058202     0.011811
+RFP      5.987856     0.011674
+CERS     5.897203     0.011497
+TACT     5.887356     0.011478
+NXTDW    5.853043     0.011411
+DRNA     5.840030     0.011386
+MIIIW    5.838284     0.011382
+CRCM     5.832737     0.011371
+SGY-WS   5.771195     0.011251
+ENSV     5.277201     0.010288
+BBG      5.129645     0.010001
+OCRX     4.956839     0.009664
+SNSS     4.931176     0.009614
+NOG      4.868326     0.009491
+NEOS     4.837847     0.009432
+TNET     4.814156     0.009386
+
+
+=== VALIDATION ===
+Loading predictions (sample)...
+Using 1,000,000 rows
+
+--- BASIC CHECKS ---
+Shape: (1,000,000, 7)
+NaNs: 0
+Infs: 0
+
+--- IC METRICS ---
+Mean IC: -0.026736
+Std IC:  0.091681
+
+--- RANK IC ---
+Mean Rank IC: -0.025700
+
+--- PORTFOLIO (WEIGHTED) ---
+Avg Long Return:     -0.002974
+Avg Short Return:     0.000000
+Avg Long-Short:      -0.002974
+Daily Sharpe:        -0.334714
+Max Drawdown:        -0.755444
+
+--- DECILE ANALYSIS ---
+Decile   Avg Return
+--------------------
+0        0.002912
+1        0.002557
+2        0.002813
+3        0.002594
+4        0.002656
+5        0.002115
+6        0.002100
+7        0.002002
+8        0.001830
+9       -0.000990
+
+Top vs Bottom Spread: -0.003902
+
+--- PREDICTION DIAGNOSTICS ---
+Prediction mean:            0.000637
+Prediction std:             0.999220
+Avg daily prediction std:   0.998860
+Directional Accuracy:       0.482097
+
+
+=== WARNINGS ===
+⚠️ Weak signal
+
+Done.
