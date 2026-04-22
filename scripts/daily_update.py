@@ -74,7 +74,11 @@ def cmd_rebuild(pipeline: TradingDataPipeline, args) -> int:
     if args.symbols:
         symbols = set(args.symbols.split(","))
 
-    result = pipeline.run_full_rebuild(symbols=symbols)
+    input_path = None
+    if args.input:
+        input_path = Path(args.input).expanduser().resolve()
+
+    result = pipeline.run_full_rebuild(symbols=symbols, input_path=input_path)
 
     print("\n" + "=" * 50)
     print("REBUILD RESULT")
@@ -199,6 +203,14 @@ Examples:
     rebuild_parser.add_argument(
         "--symbols",
         help="Comma-separated symbols to rebuild (default: all scraper stocks)",
+    )
+    rebuild_parser.add_argument(
+        "--input",
+        default=None,
+        help=(
+            "Optional input file to rebuild from (CSV or Parquet). "
+            "If omitted, rebuild uses existing full_merged.parquet if present."
+        ),
     )
 
     versions_parser = subparsers.add_parser("versions", help="List data versions")

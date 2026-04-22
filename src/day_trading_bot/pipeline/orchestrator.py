@@ -140,7 +140,11 @@ class TradingDataPipeline:
                 execution_time_seconds=time.time() - start_time,
             )
 
-    def run_full_rebuild(self, symbols: Optional[set[str]] = None) -> UpdateResult:
+    def run_full_rebuild(
+        self,
+        symbols: Optional[set[str]] = None,
+        input_path: Optional[Path] = None,
+    ) -> UpdateResult:
         start_time = time.time()
 
         logger.info("=" * 60)
@@ -151,17 +155,29 @@ class TradingDataPipeline:
             merged_file = self.config.processed_dir / "merged_2017_2026.csv"
             training_file = self.config.processed_dir / "training_2017_2026.csv"
 
-            use_file = None
+            # Safety rule:
+            # - If you already have full_merged.parquet, rebuild should use it by default.
+            #   That prevents accidentally overwriting a larger merged dataset with a smaller CSV.
+            # - If you want to rebuild from a specific file, pass --input.
+            use_file: Optional[Path] = None
 
-            if training_file.exists() and training_file.stat().st_size > 100_000_000:
-                use_file = training_file
-                logger.info(f"Using training file: {training_file}")
+            if input_path is not None:
+                use_file = input_path
+                logger.info(f"Using explicit input file: {use_file}")
+            elif self.config.main_data_file.exists():
+                use_file = self.config.main_data_file
+                logger.info(f"Using existing main data file: {use_file}")
             elif merged_file.exists():
                 use_file = merged_file
-                logger.info(f"Using merged file: {merged_file}")
-
+                logger.info(f"Using merged file: {use_file}")
+            elif training_file.exists():
+                use_file = training_file
+                logger.info(f"Using training file: {use_file}")
             if use_file:
-                df = pd.read_csv(use_file)
+                if use_file.suffix.lower() in {".parquet", ".pq"}:
+                    df = pd.read_parquet(use_file)
+                else:
+                    df = pd.read_csv(use_file)
                 logger.info(f"Loaded {len(df)} records from {use_file.name}")
 
                 if symbols:
@@ -269,10 +285,30 @@ class TradingDataPipeline:
         }
 
     def _load_existing_data(self) -> pd.DataFrame:
+        parquet_file = self.config.main_data_file
+
+        if parquet_file.exists():
+            try:
+                df = pd.read_parquet(parquet_file)
+                logger.info(
+                    f"Loaded existing data from {parquet_file}: {len(df)} records"
+                )
+                return df
+            except Exception as e:
+                logger.warning(f"Error loading {parquet_file}: {e}")
+
+        csv_file = self.config.main_data_csv
+        if csv_file.exists():
+            try:
+                df = pd.read_csv(csv_file)
+                logger.info(f"Loaded existing data from {csv_file}: {len(df)} records")
+                return df
+            except Exception as e:
+                logger.warning(f"Error loading {csv_file}: {e}")
+
         possible_files = [
             self.config.legacy_data_file,
             self.config.src_data_file,
-            self.config.main_data_file,
         ]
 
         for data_file in possible_files:
@@ -291,10 +327,14 @@ class TradingDataPipeline:
         return pd.DataFrame()
 
     def _save_combined_data(self, df: pd.DataFrame) -> None:
-        output_file = self.config.main_data_file
-        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_parquet = self.config.main_data_file
+        output_csv = self.config.main_data_csv
+        output_parquet.parent.mkdir(parents=True, exist_ok=True)
 
         df = df.sort_values(["symbol", "Date"])
 
-        df.to_csv(output_file, index=False)
-        logger.info(f"Saved combined data: {output_file} ({len(df)} records)")
+        df.to_parquet(output_parquet, index=False)
+        logger.info(f"Saved combined data: {output_parquet} ({len(df)} records)")
+
+        df.to_csv(output_csv, index=False)
+        logger.info(f"Saved CSV backup: {output_csv} ({len(df)} records)")

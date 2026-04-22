@@ -62,7 +62,7 @@ class PerformanceIndexer:
 
     def _build_date_index(self, df: pd.DataFrame) -> pd.DataFrame:
         df_copy = df.copy()
-        df_copy["Date"] = pd.to_datetime(df_copy["Date"]).dt.strftime("%Y-%m-%d")
+        df_copy["Date"] = pd.to_datetime(df_copy["Date"], utc=True, errors="coerce").dt.strftime("%Y-%m-%d")
 
         date_stats = (
             df_copy.groupby("Date")
@@ -163,7 +163,7 @@ class PerformanceIndexer:
         if not self._loaded:
             return None
 
-        date_str = pd.to_datetime(date).strftime("%Y-%m-%d")
+        date_str = pd.to_datetime(date, utc=True, errors="coerce").strftime("%Y-%m-%d")
         row = self._date_index[self._date_index["date"] == date_str]
 
         if row.empty:
@@ -186,8 +186,8 @@ class PerformanceIndexer:
         if not self._loaded or self._date_index is None:
             return []
 
-        start = pd.to_datetime(start_date).strftime("%Y-%m-%d")
-        end = pd.to_datetime(end_date).strftime("%Y-%m-%d")
+        start = pd.to_datetime(start_date, utc=True, errors="coerce").strftime("%Y-%m-%d")
+        end = pd.to_datetime(end_date, utc=True, errors="coerce").strftime("%Y-%m-%d")
 
         mask = (self._date_index["date"] >= start) & (self._date_index["date"] <= end)
         dates = self._date_index[mask]["date"].tolist()
@@ -208,11 +208,11 @@ class PerformanceIndexer:
         filters = [f"symbol == '{symbol.upper()}'"]
 
         if start_date:
-            start = pd.to_datetime(start_date).strftime("%Y-%m-%d")
+            start = pd.to_datetime(start_date, utc=True, errors="coerce").strftime("%Y-%m-%d")
             filters.append(f"Date >= '{start}'")
 
         if end_date:
-            end = pd.to_datetime(end_date).strftime("%Y-%m-%d")
+            end = pd.to_datetime(end_date, utc=True, errors="coerce").strftime("%Y-%m-%d")
             filters.append(f"Date <= '{end}'")
 
         query = " and ".join(filters)
