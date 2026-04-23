@@ -73,7 +73,11 @@ class PipelineConfig:
 
     @property
     def main_data_file(self) -> Path:
-        return self.processed_dir / "training_2017_2026.csv"
+        return self.processed_dir / "full_merged.parquet"
+
+    @property
+    def main_data_csv(self) -> Path:
+        return self.processed_dir / "full_merged.csv"
 
     @property
     def legacy_data_file(self) -> Path:

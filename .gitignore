@@ -6,3 +6,26 @@ archive/
 data/raw/
 data/processed/
 full_cleaning_log.txt
+
+# Data files — never push these
+data/processed/
+data/cache/
+data/versions/
+data/logs/
+data/raw/
+*.parquet
+*.csv
+*.feather
+src/*.csv
+src/*.parquet
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Env
+.env
+*.env
+secrets.json

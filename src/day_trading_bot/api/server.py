@@ -196,3 +196,38 @@ def get_audit(limit: int = Query(50, description="Number of entries")):
         return {"audit": [], "message": "No audit entries"}
 
     return {"audit": df.to_dict(orient="records")}
+
+
+# ── Health endpoints (from monitoring) ─────────────────────────────────
+
+from src.day_trading_bot.monitoring.logger import get_logger, log_event
+import time
+from datetime import datetime
+
+_start_time = time.time()
+_logger = get_logger("api")
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for frontend and monitoring."""
+    try:
+        status = pipeline.get_status()
+        data_ok = True
+    except Exception as e:
+        status = {"error": str(e)}
+        data_ok = False
+
+    result = {
+        "status": "ok" if data_ok else "degraded",
+        "uptime_seconds": round(time.time() - _start_time, 1),
+        "data_pipeline": status,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+    log_event(_logger, "health_check", result["status"])
+    return result
+
+
+@app.get("/health/ping")
+def ping():
+    return {"ping": "pong"}
