@@ -1,1 +1,60 @@
-<!--html starts here-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Market Prediction</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- settings Gear -->
+  <button class="settings-btn" id="settingsBtn">⚙</button>
+
+  <!-- settings Popup -->
+  <div class="settings-popup hidden" id="settingsPopup">
+    <h2>Update Data</h2>
+
+    <div class="settings-row">
+      <label for="updateSlider">Update Data:</label>
+      <div class="percent-box" id="percentDisplay">50.0%</div>
+      <input type="range" id="updateSlider" min="0" max="100" step="0.1" value="50">
+    </div>
+
+    <button class="update-btn" id="updateBtn">Update</button>
+  </div>
+
+  <div class="container">
+    <h1>Stock Market Prediction</h1>
+
+    <div class="top-section">
+      <div class="column">
+        <h2>Top 10 Stocks</h2>
+        <div class="box" id="stock-box"></div>
+      </div>
+
+      <div class="column">
+        <h2>Prices</h2>
+        <div class="box" id="price-box"></div>
+      </div>
+    </div>
+
+    <button class="predict-btn">Predict</button>
+
+    <div class="buy-section">
+      <label>Buy Stock:</label>
+      <input class="input-large" type="text" value="STK">
+
+      <label>#:</label>
+      <input class="input-small" type="number" value="1">
+
+      <label>Price:</label>
+      <input class="input-price" type="text" value="">
+    </div>
+
+    <button class="buy-btn">Buy</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

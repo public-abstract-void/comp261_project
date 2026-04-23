@@ -1,1 +1,231 @@
-/*css starts here */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* animated gradient */
+  background: linear-gradient(270deg, #6a11cb, #2575fc, #00c9ff, #92fe9d);
+  background-size: 800% 800%;
+  animation: gradientMove 12s ease infinite;
+  position: relative;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+h1 {
+  font-size: 56px;
+  font-weight: 400;
+  margin-bottom: 40px;
+}
+
+.top-section {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 120px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.column h2 {
+  font-size: 36px;
+  font-weight: 400;
+  margin-bottom: 15px;
+}
+
+.box {
+  width: 230px;
+  min-height: 320px;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 20px;
+  font-size: 28px;
+  line-height: 1.5;
+  color: #333;
+  text-align: center;
+  height: auto;
+  border-radius: 10px;
+}
+
+.predict-btn,
+.buy-btn,
+.update-btn {
+  background: #444;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  font-size: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.predict-btn {
+  margin: 20px 0 60px;
+}
+
+.buy-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 25px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+  font-size: 34px;
+}
+
+.input-large,
+.input-small,
+.input-price {
+  border: none;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 12px 18px;
+  font-size: 28px;
+  text-align: center;
+  outline: none;
+  border-radius: 6px;
+}
+
+.input-large {
+  width: 260px;
+}
+
+.input-small {
+  width: 90px;
+}
+
+.input-price {
+  width: 240px;
+}
+
+.settings-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  font-size: 34px;
+  border: none;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.settings-popup {
+  position: absolute;
+  top: 95px;
+  right: 20px;
+  width: 650px;
+  max-width: calc(100% - 40px);
+  padding: 35px 30px 30px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 20;
+
+  /* Opposite gradient */
+  background: linear-gradient(270deg, #ff416c, #ff4b2b, #ffcc00, #ff6a00);
+  background-size: 800% 800%;
+  animation: gradientMove 12s ease infinite;
+}
+
+.hidden {
+  display: none;
+}
+
+.settings-popup h2 {
+  font-size: 64px;
+  font-weight: 400;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  flex-wrap: wrap;
+  margin-bottom: 45px;
+}
+
+.settings-row label {
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.percent-box {
+  min-width: 220px;
+  text-align: center;
+  background: #d9d9d9;
+  padding: 25px 20px;
+  font-size: 34px;
+}
+
+.settings-row input[type="range"] {
+  width: 180px;
+  accent-color: #1993e8;
+  cursor: pointer;
+}
+
+.update-btn {
+  display: block;
+  margin: 0 auto;
+  font-size: 34px;
+  padding: 16px 36px;
+  border-radius: 16px;
+}
+
+/* main animated background */
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 50% 100%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 0%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* settings background */
+@keyframes gradientMoveReverse {
+  0% {
+    background-position: 100% 50%;
+  }
+  25% {
+    background-position: 50% 0%;
+  }
+  50% {
+    background-position: 0% 50%;
+  }
+  75% {
+    background-position: 50% 100%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
