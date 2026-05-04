@@ -49,7 +49,7 @@ class ChangeDetector:
 
         df = df.copy()
 
-        df["_Date_str"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
+        df["_Date_str"] = pd.to_datetime(df["Date"], utc=True, errors="coerce").dt.strftime("%Y-%m-%d")
 
         for _, row in df.iterrows():
             key = (str(row.get("symbol", "")).upper(), str(row.get("_Date_str", "")))
@@ -104,7 +104,7 @@ class ChangeDetector:
         self._old_index = self.build_index(old_data)
 
         new_data = new_data.copy()
-        new_data["_Date_str"] = pd.to_datetime(new_data["Date"]).dt.strftime("%Y-%m-%d")
+        new_data["_Date_str"] = pd.to_datetime(new_data["Date"], utc=True, errors="coerce").dt.strftime("%Y-%m-%d")
 
         added = []
         modified = []
@@ -181,7 +181,7 @@ class ChangeDetector:
         old_data["_Date_str"] = pd.to_datetime(old_data["Date"]).dt.strftime("%Y-%m-%d")
 
         new_data = new_data.copy()
-        new_data["_Date_str"] = pd.to_datetime(new_data["Date"]).dt.strftime("%Y-%m-%d")
+        new_data["_Date_str"] = pd.to_datetime(new_data["Date"], utc=True, errors="coerce").dt.strftime("%Y-%m-%d")
 
         new_symbols = set(new_data["symbol"].unique())
         old_symbols = set(old_data["symbol"].unique())
