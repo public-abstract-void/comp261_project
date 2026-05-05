@@ -1,0 +1,8 @@
+* Create a virtual environment with: python3 -m venv venv
+* Go into it using: source /venv/bin/activate
+* Install dependencies using: pip install -r requirements.txt
+
+* Use daytrading_loading.py to load our data.
+* Use cleaning.py to clean our data.
+* Merge any data at this stage.
+* Finally use parquet_converter.py to convert the CSV to a parquet file.

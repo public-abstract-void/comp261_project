@@ -1,0 +1,9 @@
+The machine learning portion of our project.
+
+1) Create a virtual environment: python3 -m venv venv
+2) Go inside the virtual environment: source /venv/bin/activate
+3) Install the required dependencies: pip install -r requirements.txt
+4) Run the pipeline: python3 run_pipeline --input parquet_data.parquet [--date_frac 0.3]
+5) Generate a human-readable report: python3 generate_report.py --input signals.parquet --output report.txt
+
+This assumes you already have a parquet of all the data you wish to train off of.
