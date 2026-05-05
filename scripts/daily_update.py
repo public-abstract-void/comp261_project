@@ -40,6 +40,8 @@ def cmd_status(pipeline: TradingDataPipeline) -> int:
     print(f"Latest version:  {status['latest_version']}")
     print(f"Last fetch:      {status['last_fetch_date']}")
     print(f"Indexes loaded:  {status['indexes_loaded']}")
+    if "delta_count" in status:
+        print(f"Delta files:     {status['delta_count']} (latest: {status.get('latest_delta')})")
     print("=" * 50)
 
     return 0
@@ -60,6 +62,8 @@ def cmd_update(pipeline: TradingDataPipeline, args) -> int:
     print(f"Records modified: {result.records_modified}")
     print(f"Version tag:     {result.version_tag}")
     print(f"Time (seconds):  {result.execution_time_seconds:.2f}")
+    if result.metadata and result.metadata.get("delta_file"):
+        print(f"Delta file:      {result.metadata.get('delta_file')}")
 
     if result.errors:
         print(f"Errors:          {result.errors}")

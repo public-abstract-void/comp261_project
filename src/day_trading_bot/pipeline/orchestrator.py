@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
 import time
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -57,7 +57,32 @@ class TradingDataPipeline:
         try:
             existing_data = self._load_existing_data()
 
-            fetched_data = self.fetcher.fetch_incremental(symbols)
+            # Daily updates should be cheap: only fetch a small recent window.
+            # If we already have data, start near the dataset's current max Date.
+            # This avoids refetching 2017->today for thousands of symbols.
+            start_date = None
+            if not existing_data.empty and "Date" in existing_data.columns:
+                try:
+                    # Robust against mixed formats + timezone-aware strings.
+                    max_dt = pd.to_datetime(
+                        existing_data["Date"],
+                        format="mixed",
+                        utc=True,
+                        errors="coerce",
+                    ).max()
+                    if pd.notna(max_dt):
+                        start_date = (max_dt.date() - timedelta(days=10))
+                except Exception:
+                    start_date = None
+
+            fetched_data = self.fetcher.fetch_incremental(
+                symbols,
+                start_date=start_date,
+                end_date=date.today(),
+                # Default to a small known-good set (config.scraper_stocks) unless the caller
+                # explicitly supplies a symbol list. This keeps "daily update" practical on laptops.
+                use_full_list=False,
+            )
 
             if fetched_data.empty:
                 logger.info("No new data fetched")
@@ -79,34 +104,25 @@ class TradingDataPipeline:
                 valid_data = self.validator.sanitize(fetched_data)
                 logger.info(f"Sanitized data: {len(valid_data)} records")
 
-            if existing_data.empty:
-                logger.info("No existing data - creating full dataset")
-                combined_data = valid_data
-                added_count = len(valid_data)
-                modified_count = 0
-            else:
-                combined_data, change_summary = self.detector.detect(
-                    existing_data, valid_data
-                )
-                added_count = change_summary.added_count
-                modified_count = change_summary.modified_count
+            # Fast-path daily updates:
+            # Instead of rewriting the full 24M-row dataset, write a small delta file.
+            # The full merged dataset remains the "rebuild artifact".
+            delta_df = valid_data.copy()
+            if "Date" in delta_df.columns:
+                delta_df["Date"] = pd.to_datetime(
+                    delta_df["Date"], format="mixed", utc=True, errors="coerce"
+                ).dt.date
+                delta_df = delta_df.dropna(subset=["Date"])
 
-            if added_count == 0 and modified_count == 0:
-                logger.info("No changes detected")
-                return UpdateResult(
-                    success=True,
-                    records_added=0,
-                    records_modified=0,
-                    execution_time_seconds=time.time() - start_time,
-                )
+            # Enforce 1 row per (symbol, Date) inside the delta itself.
+            if "symbol" in delta_df.columns and "Date" in delta_df.columns:
+                delta_df = delta_df.drop_duplicates(subset=["symbol", "Date"], keep="last")
 
-            self._save_combined_data(combined_data)
+            delta_file = self._write_delta(delta_df)
+            added_count = len(delta_df)
+            modified_count = 0
 
-            version_tag = self.versioner.create_version(combined_data)
-
-            self.indexer.build_indexes(combined_data)
-            self.indexer.save_indexes()
-
+            # Cursor indicates the last time we attempted an update.
             self.fetcher.save_cursor(date.today())
 
             execution_time = time.time() - start_time
@@ -114,7 +130,7 @@ class TradingDataPipeline:
             logger.info("=" * 60)
             logger.info("DAILY UPDATE COMPLETE")
             logger.info(f"  Added: {added_count}, Modified: {modified_count}")
-            logger.info(f"  Version: {version_tag}")
+            logger.info(f"  Delta file: {delta_file}")
             logger.info(f"  Time: {execution_time:.2f}s")
             logger.info("=" * 60)
 
@@ -122,12 +138,13 @@ class TradingDataPipeline:
                 success=True,
                 records_added=added_count,
                 records_modified=modified_count,
-                version_tag=version_tag,
+                version_tag=None,
                 execution_time_seconds=execution_time,
                 metadata={
-                    "total_records": len(combined_data),
-                    "symbol_count": int(combined_data["symbol"].nunique())
-                    if not combined_data.empty
+                    "delta_file": str(delta_file),
+                    "delta_records": int(added_count),
+                    "delta_symbols": int(delta_df["symbol"].nunique())
+                    if not delta_df.empty and "symbol" in delta_df.columns
                     else 0,
                 },
             )
@@ -237,6 +254,9 @@ class TradingDataPipeline:
         end_date: Optional[date] = None,
     ) -> pd.DataFrame:
         df = self._load_existing_data()
+        deltas = self._load_deltas(symbols=symbols)
+        if not deltas.empty:
+            df = pd.concat([df, deltas], ignore_index=True)
 
         if df.empty:
             return df
@@ -263,6 +283,7 @@ class TradingDataPipeline:
 
     def get_status(self) -> dict:
         df = self._load_existing_data()
+        deltas = self._list_delta_files()
 
         versions = self.list_versions()
 
@@ -282,7 +303,48 @@ class TradingDataPipeline:
             "latest_version": versions[0].get("version") if versions else None,
             "last_fetch_date": cursor_date,
             "indexes_loaded": self.indexer._loaded,
+            "delta_count": len(deltas),
+            "latest_delta": str(deltas[0].name) if deltas else None,
         }
+
+    def _delta_dir(self) -> Path:
+        d = self.config.processed_dir / "deltas"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def _list_delta_files(self) -> list[Path]:
+        d = self._delta_dir()
+        files = sorted(d.glob("delta_*.parquet"), reverse=True)
+        return files
+
+    def _write_delta(self, df: pd.DataFrame) -> Path:
+        out_dir = self._delta_dir()
+        tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out = out_dir / f"delta_{tag}.parquet"
+        df.to_parquet(out, index=False)
+        return out
+
+    def _load_deltas(self, symbols: Optional[list[str]] = None) -> pd.DataFrame:
+        files = self._list_delta_files()
+        if not files:
+            return pd.DataFrame()
+
+        # Only the newest few deltas matter for "daily update" consumption.
+        # Keep this small so reads remain fast.
+        files = files[:10]
+        frames = []
+        for f in files:
+            try:
+                d = pd.read_parquet(f)
+                if symbols and "symbol" in d.columns:
+                    d = d[d["symbol"].isin([s.upper() for s in symbols])]
+                if not d.empty:
+                    frames.append(d)
+            except Exception as e:
+                logger.warning(f"Could not load delta {f}: {e}")
+        if not frames:
+            return pd.DataFrame()
+        return pd.concat(frames, ignore_index=True)
 
     def _load_existing_data(self) -> pd.DataFrame:
         parquet_file = self.config.main_data_file
