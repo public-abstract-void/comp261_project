@@ -6,6 +6,7 @@ PRO FEATURE ENGINEERING PIPELINE (V4 - OPTIMIZED)
 
 import pandas as pd
 import numpy as np
+import argparse
 
 TARGET_HORIZONS = [1, 3, 5]
 ROLL_WINDOWS = [5, 10, 20, 50]
@@ -161,3 +162,18 @@ def run_feature_engineering(input_path, output_path, date_frac=1.0):
     df.to_parquet(output_path, index=False)
 
     print("Done.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--date_frac", type=float, default=1.0)
+
+    args = parser.parse_args()
+
+    run_feature_engineering(
+        input_path=args.input,
+        output_path=args.output,
+        date_frac=args.date_frac,
+    )
