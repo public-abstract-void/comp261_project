@@ -1,0 +1,337 @@
+/* This file is intentionally "calm" so the demo screenshot is readable. */
+:root {
+  /* "Junah-like" bright demo look, but with readable spacing. */
+  --bg: #3d7ff0;           /* strong blue background */
+  --card: rgba(255, 255, 255, 0.55);
+  --card2: rgba(255, 255, 255, 0.70);
+  --border: rgba(0, 0, 0, 0.10);
+  --text: rgba(0, 0, 0, 0.92);
+  --muted: rgba(0, 0, 0, 0.60);
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  --accent: #111111;
+  --accent2: #111111;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg);
+  color: var(--text);
+  position: relative;
+}
+
+.container {
+  width: min(1100px, calc(100% - 36px));
+  margin: 18px;
+  padding: 22px 18px 18px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: var(--shadow);
+  text-align: left;
+}
+
+.header {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 4px 4px 14px;
+}
+
+.header h1 {
+  font-size: 48px;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.sub {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 70ch;
+}
+
+.top-section {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 940px) {
+  .top-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 16px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.panel-head {
+  padding: 14px 14px 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.panel-head h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.list {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 340px;
+}
+
+.row {
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 14px;
+  background: var(--card2);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.row .left {
+  min-width: 0;
+}
+
+.row .name {
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row .meta {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pill {
+  flex: 0 0 auto;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.pill.good {
+  border-color: rgba(0, 0, 0, 0.30);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06) inset;
+}
+
+.pill.neutral {
+  border-color: rgba(0, 0, 0, 0.18);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04) inset;
+}
+
+.predict-btn,
+.buy-btn,
+.update-btn {
+  appearance: none;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: rgba(50, 50, 50, 0.85);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 10px 16px;
+  font-size: 16px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.predict-btn:hover,
+.buy-btn:hover,
+.update-btn:hover {
+  background: rgba(30, 30, 30, 0.90);
+}
+
+.buy-section {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 940px) {
+  .buy-section {
+    grid-template-columns: auto 1fr;
+  }
+}
+
+.buy-section label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.input-large,
+.input-small,
+.input-price {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 12px;
+  outline: none;
+}
+
+.input-small {
+  max-width: 120px;
+}
+
+.input-price {
+  max-width: 220px;
+}
+
+.buy-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 12px;
+  font-weight: 650;
+}
+
+.settings-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  font-size: 22px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.settings-popup {
+  position: absolute;
+  top: 95px;
+  right: 20px;
+  width: 520px;
+  max-width: calc(100% - 40px);
+  padding: 18px 16px 16px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 20;
+
+  /* still colorful, but readable */
+  background: linear-gradient(180deg, rgba(255, 90, 120, 0.22), rgba(255, 195, 0, 0.16));
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  backdrop-filter: blur(10px);
+}
+
+.hidden {
+  display: none;
+}
+
+.settings-popup h2 {
+  font-size: 20px;
+  font-weight: 750;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.settings-row label {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.percent-box {
+  min-width: 220px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 12px;
+}
+
+.settings-row input[type="range"] {
+  width: 200px;
+  accent-color: #1993e8;
+  cursor: pointer;
+}
+
+.update-btn {
+  display: block;
+  margin: 0 auto;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 16px;
+}
+
+/* Keep the demo legible even when errors are displayed. */
+.error {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 80, 80, 0.18);
+  border: 1px solid rgba(255, 80, 80, 0.30);
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+/* settings background */
+@keyframes gradientMoveReverse {
+  0% {
+    background-position: 100% 50%;
+  }
+  25% {
+    background-position: 50% 0%;
+  }
+  50% {
+    background-position: 0% 50%;
+  }
+  75% {
+    background-position: 50% 100%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
