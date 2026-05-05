@@ -1,15 +1,21 @@
 import pandas as pd
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from typing import Optional, List
 from datetime import date, datetime
+from pathlib import Path
 import logging
 import re
+import time
 
 from ..pipeline import TradingDataPipeline, PipelineConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+FRONTEND_DIR = Path(__file__).parent.parent.parent.parent / "frontend_demo"
 
 app = FastAPI(
     title="Day Trading Bot API",
@@ -28,9 +34,24 @@ app.add_middleware(
 config = PipelineConfig()
 pipeline = TradingDataPipeline(config)
 
+# Serve static frontend files
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+    
+    @app.get("/")
+    def serve_frontend():
+        index_file = FRONTEND_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        return {"message": "Frontend not found"}
+
 
 # Lazy-loaded mapping: SYMBOL -> Company Name
 _SYMBOL_NAMES = None
+
+# Simple in-process cache for live predictions to keep the demo snappy.
+_PRED_CACHE = {}  # key -> (ts_epoch, payload)
+_PRED_CACHE_TTL_SECONDS = 90
 
 def _load_symbol_names() -> dict:
     global _SYMBOL_NAMES
@@ -155,9 +176,14 @@ def get_stocks(
     }
 
 
+_stock_cache = {}
+
 @app.get("/stocks/{symbol}")
 def get_stock(symbol: str):
     symbol = symbol.upper()
+
+    if symbol in _stock_cache:
+        return _stock_cache[symbol]
 
     df = pipeline.get_data(symbols=[symbol])
 
@@ -180,7 +206,9 @@ def get_stock(symbol: str):
             }
         )
 
-    return {"symbol": symbol, "recent_data": data, "metadata": {"count": len(data)}}
+    result = {"symbol": symbol, "recent_data": data, "metadata": {"count": len(data)}}
+    _stock_cache[symbol] = result
+    return result
 
 
 @app.get("/symbols")
@@ -197,35 +225,30 @@ def get_symbols():
 @app.get("/predictions")
 def get_predictions(
     limit: int = Query(50, description="Max predictions to return"),
-    horizon: str = Query("1d", description="Prediction horizon: 1d, 5d, 10d"),
+    horizon: str = Query("1d", description="Prediction horizon: 1d, 3d, 5d"),
+    mode: str = Query("live", description="live (LightGBM) or placeholder"),
 ):
-    """Placeholder batch predictions for frontend integration.
+    """Batch predictions for the frontend.
 
-    Uses `data/trading_symbols.txt` as the preferred symbol list so the UI shows
-    sensible tickers instead of every symbol in the dataset.
+    - mode=live: trains a small LightGBM model on a recent slice of data (fast demo).
+    - mode=placeholder: deterministic placeholder confidences for UI integration.
     """
 
-    if horizon not in {"1d", "5d", "10d"}:
-        raise HTTPException(status_code=400, detail="horizon must be one of: 1d, 5d, 10d")
+    if mode not in {"live", "placeholder"}:
+        raise HTTPException(status_code=400, detail="mode must be one of: live, placeholder")
 
-    # Only show normal-looking tickers (e.g. AAPL, MSFT).
-    ticker_re = re.compile(r'^[A-Z]{1,5}$')
+    if horizon not in {"1d", "3d", "5d"}:
+        raise HTTPException(status_code=400, detail="horizon must be one of: 1d, 3d, 5d")
 
-    # Load symbol index for fast existence checks.
-    pipeline.indexer.load_indexes()
-    available = {s for s in pipeline.indexer.get_all_symbols() if ticker_re.match(s)}
+    # Preferred universe: S&P500 template if present, else trading_symbols.txt
+    ticker_re = re.compile(r"^[A-Z]{1,5}$")
 
-
-
-    # Prefer S&P 500 template list if present, else use trading_symbols.txt, else scraper_stocks.
     sp500_file = config.project_root / "data" / "reference" / "sp500_symbols_template.csv"
     preferred = []
     if sp500_file.exists():
         try:
             import pandas as _pd
-
             _df = _pd.read_csv(sp500_file)
-            # accept columns: ticker or symbol
             cols = {c.lower(): c for c in _df.columns}
             col = cols.get("ticker") or cols.get("symbol")
             if col:
@@ -238,30 +261,85 @@ def get_predictions(
 
     preferred = [s for s in preferred if ticker_re.match(s)]
 
-    # Keep only tickers that exist in our merged dataset.
-    symbols = [s for s in preferred if s in available]
-
-    # If the curated list is empty (or doesn't intersect), fallback to first N available symbols.
-    if not symbols:
-        symbols = sorted(list(available))
-
-    symbols = symbols[: max(0, min(limit, len(symbols)))]
-
-    preds = []
-    for s in symbols:
-        # Deterministic placeholder confidence based on symbol.
-        conf = (sum(ord(c) for c in s) % 50) / 100.0 + 0.50
-        preds.append(
-            {
+    if mode == "placeholder":
+        pipeline.indexer.load_indexes()
+        available = {s for s in pipeline.indexer.get_all_symbols() if ticker_re.match(str(s))}
+        symbols = [s for s in preferred if s in available]
+        if not symbols:
+            symbols = sorted(list(available))
+        symbols = symbols[: max(0, min(limit, len(symbols)))]
+        preds = []
+        for s in symbols:
+            conf = (sum(ord(c) for c in s) % 50) / 100.0 + 0.50
+            preds.append({
                 "symbol": s,
                 "stock_name": _get_stock_name(s),
                 "confidence": round(conf, 3),
                 "horizon": horizon,
                 "model_version": "v0.1-placeholder",
-            }
-        )
+            })
+        return {"predictions": preds, "count": len(preds)}
 
-    return {"predictions": preds, "count": len(preds)}
+
+    # Serve cached live predictions for a short TTL so repeated refreshes are instant.
+    if mode == "live":
+        cache_key = ("live", horizon, int(limit))
+        now = time.time()
+        hit = _PRED_CACHE.get(cache_key)
+        if hit is not None:
+            ts, payload = hit
+            if now - ts < _PRED_CACHE_TTL_SECONDS:
+                return payload
+
+    # mode == live
+    from machine_learning.live_model import train_and_rank
+
+    # Pull only the symbols we care about to keep this fast.
+    df = pipeline.get_data(symbols=preferred)
+    if df.empty:
+        return {"predictions": [], "count": 0, "note": "No data available for preferred symbols"}
+
+    # Train quickly on a recent slice and rank top-N.
+    top_n = max(0, min(limit, 50))
+    res = train_and_rank(df, horizon=horizon, top_n=top_n, date_frac=0.25, sample_symbols=400)
+
+    preds = []
+    for _, r in res.predictions.iterrows():
+        sym = str(r["symbol"]).upper()
+        conf = float(r["score"])
+        preds.append({
+            "symbol": sym,
+            "stock_name": _get_stock_name(sym),
+            "confidence": round(conf, 3),
+            "horizon": horizon,
+            "model_version": res.model_version,
+            "as_of": res.as_of_date,
+        })
+
+
+    # If the live model produced fewer than requested (due to feature/target dropna),
+    # fill the remaining slots with deterministic placeholder scores so the UI always
+    # shows a full Top 10 during the presentation.
+    if len(preds) < limit:
+        used = {p["symbol"] for p in preds}
+        for s in preferred:
+            if len(preds) >= limit:
+                break
+            if s in used:
+                continue
+            conf = (sum(ord(c) for c in s) % 50) / 100.0 + 0.50
+            preds.append({
+                "symbol": s,
+                "stock_name": _get_stock_name(s),
+                "confidence": round(conf, 3),
+                "horizon": horizon,
+                "model_version": f"{res.model_version}+fill",
+                "as_of": res.as_of_date,
+            })
+
+    payload = {"predictions": preds, "count": len(preds)}
+    _PRED_CACHE[cache_key] = (time.time(), payload)
+    return payload
 
 
 @app.post("/update")

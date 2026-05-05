@@ -247,13 +247,18 @@ class TradingDataPipeline:
                 execution_time_seconds=time.time() - start_time,
             )
 
+    _data_cache = None
+
     def get_data(
         self,
         symbols: Optional[list[str]] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
     ) -> pd.DataFrame:
-        df = self._load_existing_data()
+        if TradingDataPipeline._data_cache is None:
+            TradingDataPipeline._data_cache = self._load_existing_data()
+        df = TradingDataPipeline._data_cache
+
         deltas = self._load_deltas(symbols=symbols)
         if not deltas.empty:
             df = pd.concat([df, deltas], ignore_index=True)

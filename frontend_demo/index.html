@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock Market Prediction</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
@@ -53,18 +53,20 @@
 
     <div class="buy-section">
       <label>Buy Stock:</label>
-      <input class="input-large" type="text" value="STK">
+      <input class="input-large" id="buySymbol" type="text" value="STK" autocomplete="off">
 
       <label>#:</label>
-      <input class="input-small" type="number" value="1">
+      <input class="input-small" id="buyQty" type="number" value="1" min="1" step="1">
 
       <label>Price:</label>
-      <input class="input-price" type="text" value="">
+      <input class="input-price" id="buyPrice" type="text" value="" placeholder="$0.00" autocomplete="off">
     </div>
 
-    <button class="buy-btn">Buy</button>
+    <button class="buy-btn" id="buyBtn">Buy</button>
+
+    <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="/static/script.js"></script>
 </body>
 </html>

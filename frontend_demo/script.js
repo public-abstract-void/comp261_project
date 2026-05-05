@@ -6,10 +6,34 @@ const stockBox = document.getElementById("stock-box");
 const priceBox = document.getElementById("price-box");
 const refreshBtn = document.getElementById("refreshBtn");
 
-const API_BASE = "http://127.0.0.1:8001";
+const buySymbol = document.getElementById("buySymbol");
+const buyQty = document.getElementById("buyQty");
+const buyPrice = document.getElementById("buyPrice");
+const buyBtn = document.getElementById("buyBtn");
+const toast = document.getElementById("toast");
+
+const API_BASE = ""; // Use relative URL (works for both local and ngrok)
+
+let selectedSymbol = null;
+let selectedRowEl = null;
+
+function showToast(msg) {
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.remove("hidden");
+  window.clearTimeout(showToast._t);
+  showToast._t = window.setTimeout(() => toast.classList.add("hidden"), 2500);
+}
+
+function parseMoney(s) {
+  if (s == null) return null;
+  const t = String(s).replace(/[$,\s]/g, "").trim();
+  const v = Number(t);
+  return Number.isFinite(v) ? v : null;
+}
 
 async function fetchPredictions() {
-  // Expect API contract: { predictions: [{symbol, stock_name, confidence, horizon, model_version}], count }
+  // Expect API contract: { predictions: [{symbol, stock_name, confidence, horizon, model_version, as_of?}], count }
   const res = await fetch(`${API_BASE}/predictions?limit=10`);
   if (!res.ok) throw new Error(`predictions failed: ${res.status}`);
   return await res.json();
@@ -33,7 +57,7 @@ function pillClass(conf) {
 
 function buildPickRow(p) {
   const row = document.createElement("div");
-  row.className = "row";
+  row.className = "row selectable";
 
   const left = document.createElement("div");
   left.className = "left";
@@ -56,6 +80,28 @@ function buildPickRow(p) {
 
   row.appendChild(left);
   row.appendChild(pill);
+
+  row.addEventListener("click", async () => {
+    const sym = (p.symbol || "").toString().trim().toUpperCase();
+    if (!sym) return;
+
+    if (selectedRowEl) selectedRowEl.classList.remove("selected");
+    selectedRowEl = row;
+    selectedRowEl.classList.add("selected");
+
+    selectedSymbol = sym;
+    if (buySymbol) buySymbol.value = sym;
+
+    try {
+      const close = await fetchLatestClose(sym);
+      if (close != null && buyPrice) buyPrice.value = close.toFixed(2);
+    } catch {
+      // ignore
+    }
+
+    showToast(`Selected ${sym}`);
+  });
+
   return row;
 }
 
@@ -91,6 +137,9 @@ async function renderPredictions(payload) {
   stockBox.innerHTML = "";
   priceBox.innerHTML = "";
 
+  if (selectedRowEl) selectedRowEl.classList.remove("selected");
+  selectedRowEl = null;
+
   if (!preds.length) {
     const d = document.createElement("div");
     d.className = "error";
@@ -99,20 +148,28 @@ async function renderPredictions(payload) {
     return;
   }
 
-  // Left: picks
+  // Left: picks (clickable)
   for (const p of preds) stockBox.appendChild(buildPickRow(p));
 
-  // Right: actual numeric prices (latest close) for the same symbols.
-  // Keep it fast: fetch sequentially; 10 requests is fine for the demo.
-  for (const p of preds) {
-    const sym = (p.symbol || "").toString();
-    if (!sym) continue;
-    try {
-      const close = await fetchLatestClose(sym);
-      priceBox.appendChild(buildPriceRow(sym, close));
-    } catch {
-      priceBox.appendChild(buildPriceRow(sym, null));
-    }
+  // Right: numeric prices (latest close) for same symbols.
+  // Do this in parallel so the panel feels instant during the demo.
+  const syms = preds
+    .map((p) => (p.symbol || "").toString().trim().toUpperCase())
+    .filter((s) => s);
+
+  const results = await Promise.all(
+    syms.map(async (sym) => {
+      try {
+        const close = await fetchLatestClose(sym);
+        return { sym, close };
+      } catch {
+        return { sym, close: null };
+      }
+    })
+  );
+
+  for (const r of results) {
+    priceBox.appendChild(buildPriceRow(r.sym, r.close));
   }
 }
 
@@ -137,6 +194,31 @@ function updatePercentage() {
   percentDisplay.textContent = `${value}%`;
 }
 
+async function onBuy() {
+  const sym = (buySymbol?.value || selectedSymbol || "").toString().trim().toUpperCase();
+  const qty = Number(buyQty?.value || 1);
+
+  if (!sym) return showToast("Enter or select a symbol");
+  if (!Number.isFinite(qty) || qty <= 0) return showToast("Quantity must be > 0");
+
+  let price = parseMoney(buyPrice?.value);
+  if (price == null) {
+    try {
+      const close = await fetchLatestClose(sym);
+      if (close != null) {
+        price = close;
+        if (buyPrice) buyPrice.value = close.toFixed(2);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (price == null) return showToast("Price missing (click a stock or type a price)");
+
+  showToast(`Paper buy: ${qty} ${sym} @ $${price.toFixed(2)} (demo only)`);
+}
+
 settingsBtn.addEventListener("click", () => {
   settingsPopup.classList.toggle("hidden");
 });
@@ -155,6 +237,7 @@ document.addEventListener("click", (event) => {
 updatePercentage();
 
 if (refreshBtn) refreshBtn.addEventListener("click", refresh);
+if (buyBtn) buyBtn.addEventListener("click", onBuy);
 
 // Initial load for demo screenshot.
 refresh();

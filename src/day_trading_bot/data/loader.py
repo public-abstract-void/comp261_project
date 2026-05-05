@@ -22,12 +22,11 @@ def load_stock_csv(file_path: Path) -> pd.DataFrame:
     if not file_path.exists():
         raise FileNotFoundError(f"Stock file not found: {file_path}")
 
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path, parse_dates=["Date"])
 
     if "Date" not in df.columns:
         raise ValueError("Expected a 'Date' column but none was found.")
 
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     return df
 
 

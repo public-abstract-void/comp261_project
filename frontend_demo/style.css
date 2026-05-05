@@ -335,3 +335,34 @@ body {
     background-position: 100% 50%;
   }
 }
+
+/* Interactive demo affordances */
+.row.selectable {
+  cursor: pointer;
+}
+
+.row.selectable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+}
+
+.row.selected {
+  border-color: rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.10) inset;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  max-width: min(720px, calc(100% - 24px));
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.20);
+  background: rgba(20, 20, 20, 0.92);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+  font-size: 14px;
+  z-index: 999;
+}
